@@ -1,12 +1,18 @@
+import os
 import pandas as pd
 import numpy as np
 import torch
 import wrds
+from dotenv import load_dotenv
 
 class WRDSDataLoader:
     #takes daily s&p
-    def __init__(self, wrds_username: str = None):
-        self.conn = wrds.Connection(wrds_username=wrds_username)
+    def __init__(self, wrds_username: str | None=None, wrds_password: str | None=None):
+        load_dotenv()
+        self.username=wrds_username or os.environ.get("WRDS_USERNAME")
+        self.password=wrds_password or os.environ.get("WRDS_PASSWORD")
+        self.conn = wrds.Connection(wrds_username=self.username)
+        
 
     def fetch_crsp_returns(
         self, 
@@ -37,7 +43,7 @@ class WRDSDataLoader:
         returns_df = raw_df.pivot(index='date', columns='permno', values='ret')
         
         # Clean missing values: Forward-fill short gaps, drop remaining NaNs
-        returns_df = returns_df.ffill().fillna(0.0)
+        returns_df = returns_df.ffill().fillna(0.0).astype(np.float64)
         return returns_df
 
     @staticmethod
@@ -53,10 +59,11 @@ class WRDSDataLoader:
           - eigenvals: [Batch, N]
           - eigenvecs: [Batch, N, N]
         """
-        num_timesteps, num_assets = returns_df.shape
-        corrs, eigenvals_list, eigenvecs_list = [], [], []
+        returns_matrix = returns_df.to_numpy(dtype=np.float64)
+        returns_matrix = np.nan_to_num(returns_matrix, nan=0.0)
 
-        returns_matrix = returns_df.to_numpy()
+        num_timesteps, num_assets = returns_matrix.shape
+        corrs, eigenvals_list, eigenvecs_list = [], [], []
 
         for t in range(lookback, num_timesteps):
             window_returns = returns_matrix[t - lookback : t]

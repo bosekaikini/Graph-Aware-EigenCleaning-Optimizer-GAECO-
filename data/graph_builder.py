@@ -18,7 +18,7 @@ class GraphBuilder:
     def build_hybrid_adjacency(
         self, 
         corr_emp: torch.Tensor, 
-        sector_adjacency: torch.Tensor = None
+        sector_adjacency: torch.Tensor | None=None
     ) -> torch.Tensor:
         """
         Computes dynamic adjacency matrix:
