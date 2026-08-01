@@ -68,7 +68,7 @@ class GAECONetPipeline(nn.Module):
     """
     End-to-End Pipeline joining Matrix Denoising with Markowitz Optimization.
     """
-    def __init__(self, num_assets: int, in_features: int = 6, hidden_dim: int = 64, risk_aversion: float =1.0):
+    def __init__(self, num_assets: int, in_features: int = 6, hidden_dim: int = 64, risk_aversion: float =0.5):
         super().__init__()
         self.core = GAECONetCore(num_assets=num_assets, in_features=in_features, hidden_dim=hidden_dim)
         self.portfolio_layer = DifferentiableMeanVariance(k_assets=num_assets, risk_aversion=risk_aversion)

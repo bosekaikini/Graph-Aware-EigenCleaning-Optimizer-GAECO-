@@ -3,165 +3,166 @@
 =====================================================
 
 --- 1. GAECO-Net Ensemble Portfolio Stats ---
-Start                             2020-03-27 00:00:00
-End                               2023-12-29 00:00:00
-Period                               99 days 00:00:00
+Start                             2020-01-03 00:00:00
+End                               2025-01-10 00:00:00
+Period                              132 days 00:00:00
 Start Value                                     100.0
-End Value                                  249.787862
-Total Return [%]                           149.787862
-Benchmark Return [%]                       132.489725
+End Value                                  176.761619
+Total Return [%]                            76.761619
+Benchmark Return [%]                        81.492434
 Max Gross Exposure [%]                          100.0
-Total Fees Paid                              4.567532
-Max Drawdown [%]                            13.484991
-Max Drawdown Duration                21 days 00:00:00
-Total Trades                                     1327
-Total Closed Trades                              1297
+Total Fees Paid                              5.090373
+Max Drawdown [%]                             23.38013
+Max Drawdown Duration                26 days 00:00:00
+Total Trades                                     1815
+Total Closed Trades                              1785
 Total Open Trades                                  30
-Open Trade PnL                              30.662577
-Win Rate [%]                                86.507325
-Best Trade [%]                             451.525784
-Worst Trade [%]                            -29.329284
-Avg Winning Trade [%]                       32.810981
-Avg Losing Trade [%]                        -7.675735
-Avg Winning Trade Duration    46 days 18:41:42.673796
-Avg Losing Trade Duration            63 days 07:40:48
-Profit Factor                                7.538168
-Expectancy                                   0.091847
-Sharpe Ratio                                 5.890904
-Calmar Ratio                               209.326123
-Omega Ratio                                  2.224182
-Sortino Ratio                               10.748496
+Open Trade PnL                               4.997819
+Win Rate [%]                                71.988796
+Best Trade [%]                             115.799841
+Worst Trade [%]                            -38.366135
+Avg Winning Trade [%]                        18.96655
+Avg Losing Trade [%]                       -10.236566
+Avg Winning Trade Duration    70 days 23:54:23.813229
+Avg Losing Trade Duration            59 days 02:09:36
+Profit Factor                                 3.41171
+Expectancy                                   0.040204
+Sharpe Ratio                                 2.875002
+Calmar Ratio                                 16.38705
+Omega Ratio                                  1.492684
+Sortino Ratio                                4.213196
 Name: group, dtype: object
 
 =====================================================
 
 --- 2. Ledoit-Wolf Shrinkage Stats ---
 Start                              2020-01-02 00:00:00
-End                                2023-12-28 00:00:00
-Period                              1005 days 00:00:00
+End                                2024-12-31 00:00:00
+Period                              1258 days 00:00:00
 Start Value                                      100.0
-End Value                                   134.935409
-Total Return [%]                             34.935409
-Benchmark Return [%]                         97.278788
+End Value                                   152.051083
+Total Return [%]                             52.051083
+Benchmark Return [%]                         80.049943
 Max Gross Exposure [%]                           100.0
-Total Fees Paid                               4.180014
-Max Drawdown [%]                             31.847006
-Max Drawdown Duration                381 days 00:00:00
-Total Trades                                     10981
-Total Closed Trades                              10957
-Total Open Trades                                   24
-Open Trade PnL                                3.996322
-Win Rate [%]                                 63.082961
-Best Trade [%]                              102.632801
-Worst Trade [%]                             -44.714883
-Avg Winning Trade [%]                         8.979531
-Avg Losing Trade [%]                         -7.214222
-Avg Winning Trade Duration    252 days 06:50:12.500000
-Avg Losing Trade Duration     244 days 16:44:58.442521
-Profit Factor                                 1.539226
-Expectancy                                    0.002824
-Sharpe Ratio                                  0.577169
-Calmar Ratio                                  0.360979
-Omega Ratio                                   1.103915
-Sortino Ratio                                 0.802641
+Total Fees Paid                               4.754103
+Max Drawdown [%]                             32.130484
+Max Drawdown Duration                489 days 00:00:00
+Total Trades                                     14946
+Total Closed Trades                              14920
+Total Open Trades                                   26
+Open Trade PnL                                3.671685
+Win Rate [%]                                 67.265416
+Best Trade [%]                               93.643823
+Worst Trade [%]                             -44.825036
+Avg Winning Trade [%]                        10.598062
+Avg Losing Trade [%]                         -6.778303
+Avg Winning Trade Duration    307 days 05:53:49.812674
+Avg Losing Trade Duration     227 days 04:38:55.135135
+Profit Factor                                 1.782596
+Expectancy                                    0.003243
+Sharpe Ratio                                  0.666633
+Calmar Ratio                                   0.40237
+Omega Ratio                                   1.120548
+Sortino Ratio                                 0.935144
 Name: group, dtype: object
 
 =====================================================
 
 --- 3. Marchenko-Pastur Denoising Stats ---
 Start                              2020-01-02 00:00:00
-End                                2023-12-28 00:00:00
-Period                              1005 days 00:00:00
+End                                2024-12-31 00:00:00
+Period                              1258 days 00:00:00
 Start Value                                      100.0
-End Value                                   129.896204
-Total Return [%]                             29.896204
-Benchmark Return [%]                         97.278788
+End Value                                   143.281976
+Total Return [%]                             43.281976
+Benchmark Return [%]                         80.049943
 Max Gross Exposure [%]                           100.0
-Total Fees Paid                               3.817172
-Max Drawdown [%]                             31.847006
-Max Drawdown Duration                312 days 00:00:00
-Total Trades                                      9422
-Total Closed Trades                               9397
-Total Open Trades                                   25
-Open Trade PnL                                3.911044
-Win Rate [%]                                 63.456422
-Best Trade [%]                              102.632801
-Worst Trade [%]                             -44.714883
-Avg Winning Trade [%]                         8.692214
-Avg Losing Trade [%]                         -7.086013
-Avg Winning Trade Duration    263 days 16:22:37.169210
-Avg Losing Trade Duration     246 days 11:34:50.390215
-Profit Factor                                 1.562037
-Expectancy                                    0.002765
-Sharpe Ratio                                  0.526099
-Calmar Ratio                                  0.312918
-Omega Ratio                                   1.096522
-Sortino Ratio                                 0.734095
+Total Fees Paid                               4.877669
+Max Drawdown [%]                             32.130484
+Max Drawdown Duration                313 days 00:00:00
+Total Trades                                     12365
+Total Closed Trades                              12338
+Total Open Trades                                   27
+Open Trade PnL                                0.794319
+Win Rate [%]                                 64.799805
+Best Trade [%]                                 58.7162
+Worst Trade [%]                             -44.825036
+Avg Winning Trade [%]                         9.277001
+Avg Losing Trade [%]                         -6.949683
+Avg Winning Trade Duration    252 days 15:55:29.831144
+Avg Losing Trade Duration     212 days 01:39:28.224729
+Profit Factor                                 1.753155
+Expectancy                                    0.003444
+Sharpe Ratio                                  0.597163
+Calmar Ratio                                  0.342314
+Omega Ratio                                   1.110179
+Sortino Ratio                                 0.839987
 Name: group, dtype: object
 
 =====================================================
 
 --- 4. Sample Covariance Stats ---
 Start                              2020-01-02 00:00:00
-End                                2023-12-28 00:00:00
-Period                              1005 days 00:00:00
+End                                2024-12-31 00:00:00
+Period                              1258 days 00:00:00
 Start Value                                      100.0
-End Value                                   124.409083
-Total Return [%]                             24.409083
-Benchmark Return [%]                         97.278788
+End Value                                   161.257403
+Total Return [%]                             61.257403
+Benchmark Return [%]                         80.049943
 Max Gross Exposure [%]                           100.0
-Total Fees Paid                               6.670566
-Max Drawdown [%]                             31.847006
-Max Drawdown Duration                436 days 00:00:00
-Total Trades                                     10405
-Total Closed Trades                              10386
-Total Open Trades                                   19
-Open Trade PnL                                2.782214
-Win Rate [%]                                 60.562295
-Best Trade [%]                              102.632801
-Worst Trade [%]                             -44.714883
-Avg Winning Trade [%]                         10.18713
-Avg Losing Trade [%]                         -7.294264
-Avg Winning Trade Duration    178 days 20:45:38.060413
-Avg Losing Trade Duration     184 days 09:30:35.156250
-Profit Factor                                 1.263446
-Expectancy                                    0.002082
-Sharpe Ratio                                  0.433988
-Calmar Ratio                                  0.259214
-Omega Ratio                                    1.07326
-Sortino Ratio                                 0.605327
+Total Fees Paid                               9.362615
+Max Drawdown [%]                             32.130484
+Max Drawdown Duration                454 days 00:00:00
+Total Trades                                     12891
+Total Closed Trades                              12869
+Total Open Trades                                   22
+Open Trade PnL                               -0.812468
+Win Rate [%]                                 61.069236
+Best Trade [%]                                96.12312
+Worst Trade [%]                             -44.825036
+Avg Winning Trade [%]                         9.744002
+Avg Losing Trade [%]                         -7.243057
+Avg Winning Trade Duration    169 days 04:54:59.961827
+Avg Losing Trade Duration     176 days 01:54:06.467065
+Profit Factor                                 1.661982
+Expectancy                                    0.004823
+Sharpe Ratio                                  0.699954
+Calmar Ratio                                  0.462831
+Omega Ratio                                   1.122653
+Sortino Ratio                                 0.983748
+Name: group, dtype: object
+
+=====================================================
+--- 5. GAECO-Net Explained (Pruned Graph) Stats ---
+Start                             2020-01-03 00:00:00
+End                               2024-10-18 00:00:00
+Period                              126 days 00:00:00
+Start Value                                     100.0
+End Value                                  137.626169
+Total Return [%]                            37.626169
+Benchmark Return [%]                        75.708594
+Max Gross Exposure [%]                          100.0
+Total Fees Paid                              7.651835
+Max Drawdown [%]                            24.813488
+Max Drawdown Duration                67 days 00:00:00
+Total Trades                                     1735
+Total Closed Trades                              1707
+Total Open Trades                                  28
+Open Trade PnL                              -0.281153
+Win Rate [%]                                68.306971
+Best Trade [%]                              83.591813
+Worst Trade [%]                            -40.080624
+Avg Winning Trade [%]                         12.4832
+Avg Losing Trade [%]                        -7.203096
+Avg Winning Trade Duration    33 days 17:13:41.269296
+Avg Losing Trade Duration     30 days 23:46:41.478743
+Profit Factor                                1.360779
+Expectancy                                   0.022207
+Sharpe Ratio                                 1.726948
+Calmar Ratio                                 6.134874
+Omega Ratio                                  1.271561
+Sortino Ratio                                2.644867
 Name: group, dtype: object
 
 =====================================================
 
-========================================================
-=== STEP 5: EMPIRICAL STATISTICAL VIABILITY SUITE ===
-========================================================
-
---- Pillar 1: Return Distribution & Time Series Foundations ---
-[Normality Test (Jarque-Bera)]
-  - JB Statistic: 1.2812
-  - p-value: 5.2699e-01
-  - Conclusion: Fails to reject normality. Asset returns follow standard Gaussian parameters.
-
-[Stationarity Test (ADF)]
-  - ADF Statistic: -10.8386
-  - p-value: 1.6378e-19
-  - Conclusion: Stationary sequence (p < 0.05). Time series assumptions are valid for mathematical forecasting.
-
-[ARCH Effects / Volatility Clustering (Ljung-Box on Squared Returns)]
-  - Lag 5 p-value: 5.0669e-02
-  - Lag 10 p-value: 2.3088e-02
-  - Conclusion: Significant volatility clustering detected (p < 0.05). Structural ARCH features are confirmed.
-
---- Pillar 2: Alpha Performance Significance vs. Benchmark ---
-[Mean Performance Lift (Paired t-test)]
-  - t-statistic: 2.4828
-  - p-value: 0.0148
-  - Conclusion: Mean outperformance is STATISTICALLY SIGNIFICANT at alpha = 5% (t-stat positive: True).
-
-[Risk Reduction Significance (Levene's Variance Test)]
-  - Levene Statistic: 58.8928
-  - p-value: 0.0000
-  - Conclusion: Strategy variance differences are STATISTICALLY SIGNIFICANT. The variance reduction is structural.
-========================================================

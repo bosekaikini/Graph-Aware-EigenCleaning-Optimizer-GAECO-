@@ -6,6 +6,50 @@ import scipy.stats as stats
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.stats.diagnostic import acorr_ljungbox
 
+
+def jobson_korkie_sharpe_test(strat_rets: pd.Series, bench_rets: pd.Series) -> tuple[float, float]:
+    """
+    Computes the Jobson-Korkie (1981) test with Memmel (2002) correction 
+    for the statistical significance of the difference between two Sharpe ratios.
+    
+    H0: Sharpe(Strategy) == Sharpe(Benchmark)
+    H1: Sharpe(Strategy) != Sharpe(Benchmark)
+    """
+    n = len(strat_rets)
+    if n < 2:
+        return 0.0, 1.0
+
+    # Sample means and variances
+    mu_a = strat_rets.mean()
+    mu_b = bench_rets.mean()
+    var_a = strat_rets.var(ddof=1)
+    var_b = bench_rets.var(ddof=1)
+    sd_a = np.sqrt(var_a)
+    sd_b = np.sqrt(var_b)
+
+    # Sample correlation and Sharpe ratios
+    rho = strat_rets.corr(bench_rets)
+    sharpe_a = mu_a / sd_a if sd_a > 0 else 0.0
+    sharpe_b = mu_b / sd_b if sd_b > 0 else 0.0
+
+    # Memmel (2002) asymptotic variance formula of Sharpe ratio difference
+    var_diff = (1 / n) * (
+        2 
+        - 2 * rho 
+        + 0.5 * (sharpe_a**2 + sharpe_b**2 - 2 * sharpe_a * sharpe_b * (rho**2))
+    )
+
+    if var_diff <= 0 or np.isnan(var_diff):
+        return 0.0, 1.0
+
+    z_stat = (sharpe_a - sharpe_b) / np.sqrt(var_diff)
+    # Two-tailed p-value calculation
+    p_value = 2.0 * (1.0 - stats.norm.cdf(abs(z_stat)))
+
+    # Explicitly cast to Python floats to satisfy type checkers (Pylance / MyPy)
+    return float(z_stat), float(p_value)
+
+
 def run_academic_statistical_viability(portfolio, test_returns_df):
     """
     Computes rigorous statistical tests on empirical backtest outputs 
@@ -62,13 +106,24 @@ def run_academic_statistical_viability(portfolio, test_returns_df):
     else:
         print("  - Conclusion: No significant volatility clustering detected.")
 
-
     # --- PILLAR 2: EMPIRICAL PERFORMANCE SIGNIFICANCE TESTING ---
     print("\n--- Pillar 2: Alpha Performance Significance vs. Benchmark ---")
+
+    # 1. Jobson-Korkie (Memmel Corrected) Test for Sharpe Ratio Outperformance
+    jk_z, jk_p_val = jobson_korkie_sharpe_test(strat_vector, bench_vector)
+    print(f"[Sharpe Ratio Outperformance Test (Jobson-Korkie with Memmel Correction)]")
+    print(f"  - Z-statistic: {jk_z:.4f}")
+    print(f"  - p-value: {jk_p_val:.4e}")
+    if jk_p_val < 0.05 and jk_z > 0:
+        print("  - Conclusion: Risk-adjusted outperformance (Sharpe Ratio) is STATISTICALLY SIGNIFICANT (p < 0.05).")
+    elif jk_p_val < 0.05 and jk_z < 0:
+        print("  - Conclusion: Benchmark Sharpe ratio significantly outperforms Strategy.")
+    else:
+        print("  - Conclusion: Sharpe ratio difference is statistically indistinguishable from benchmark noise.")
     
-    # 1. Paired t-test for Daily Mean Performance Lift
+    # 2. Paired t-test for Daily Mean Performance Lift
     t_stat, t_p_val = stats.ttest_rel(strat_vector, bench_vector)
-    print(f"[Mean Performance Lift (Paired t-test)]")
+    print(f"\n[Mean Performance Lift (Paired t-test)]")
     print(f"  - t-statistic: {t_stat:.4f}")
     print(f"  - p-value: {t_p_val:.4f}")
     if t_p_val < 0.05:
@@ -76,7 +131,7 @@ def run_academic_statistical_viability(portfolio, test_returns_df):
     else:
         print("  - Conclusion: Mean difference is statistically indistinguishable from zero (noise).")
 
-    # 2. Levene's Test for Risk Reduction Equality
+    # 3. Levene's Test for Risk Reduction Equality
     levene_stat, levene_p_val = stats.levene(strat_vector, bench_vector)
     print(f"\n[Risk Reduction Significance (Levene's Variance Test)]")
     print(f"  - Levene Statistic: {levene_stat:.4f}")
