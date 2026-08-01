@@ -89,5 +89,5 @@ class WRDSDataLoader:
             "corr_emp": torch.tensor(np.array(corrs), dtype=torch.float32),
             "eigenvals": torch.tensor(np.array(eigenvals_list), dtype=torch.float32),
             "eigenvecs": torch.tensor(np.array(eigenvecs_list), dtype=torch.float32),
-            "dates": returns_df.index[lookback:]
+            "dates": returns_df.index[lookback-1:-1]
         }
