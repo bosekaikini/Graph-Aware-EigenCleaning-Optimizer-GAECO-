@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from models.gaeco_network import GAECONetPipeline
-from loss.risk_loss import NetSharpeLoss
+from loss.risk_loss import NetSortinoLoss
 
 
 def _extract_node_features(window_ret: torch.Tensor, curr_idx_val: torch.Tensor, num_assets: int) -> torch.Tensor:
@@ -114,7 +114,7 @@ def train_gaeco_net(
         model = GAECONetPipeline(num_assets=num_assets, in_features=6, risk_aversion=risk_aversion)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    criterion = NetSharpeLoss(fee_rate=0.0010, return_weight=2.0)
+    criterion = NetSortinoLoss(fee_rate=0.0010, return_weight=2.0)
 
     returns_tensor = torch.tensor(returns_df.values, dtype=torch.float32)
     num_timesteps = len(returns_df)
