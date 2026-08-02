@@ -68,10 +68,25 @@ class GAECONetPipeline(nn.Module):
     """
     End-to-End Pipeline joining Matrix Denoising with Markowitz Optimization.
     """
-    def __init__(self, num_assets: int, in_features: int = 6, hidden_dim: int = 64, risk_aversion: float =0.5):
+    def __init__(
+        self,
+        num_assets: int,
+        in_features: int = 8,
+        hidden_dim: int = 64,
+        risk_aversion: float = 0.5,
+        top_k: int | None = None,
+    ):
+        """
+        top_k: number of highest-conviction assets to actually hold
+        (see models/portfolio_layer.py fix). Defaults to `num_assets`
+        (dense softmax, i.e. the previous behavior); pass e.g.
+        `top_k=15` for a 30-name universe to enable real concentration.
+        """
         super().__init__()
         self.core = GAECONetCore(num_assets=num_assets, in_features=in_features, hidden_dim=hidden_dim)
-        self.portfolio_layer = DifferentiableMeanVariance(k_assets=num_assets, risk_aversion=risk_aversion)
+        self.portfolio_layer = DifferentiableMeanVariance(
+            num_assets=num_assets, risk_aversion=risk_aversion, top_k=top_k
+        )
 
     def forward(
         self, 

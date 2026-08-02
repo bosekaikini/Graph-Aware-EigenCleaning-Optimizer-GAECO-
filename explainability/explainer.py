@@ -160,18 +160,54 @@ def generate_explained_allocations(
     model: nn.Module,
     returns_df: pd.DataFrame,
     empirical_data: dict,
-    lookback: int = 60
+    lookback: int = 60,
+    ema_alpha: float = 0.25,
+    explainer_epochs: int = 30,
 ) -> pd.DataFrame:
     """
-    Generates allocations where graph inputs are masked/filtered using 
-    the GAECO-Explainer to prune noisy edge and feature dependencies.
+    Generates allocations where graph inputs are masked/filtered using
+    the GAECO-Explainer to prune noisy edge dependencies.
+
+    FIX (see "gaeco-explained is very bad"): the previous version had three
+    compounding stability problems, all specific to this trade-on-the-
+    explained-subgraph path (the diagnostic attribution plot in
+    plot_and_save_subgraph_attribution is unaffected and still uses the
+    full continuous mask):
+
+    1. It hard-thresholded the continuous edge_mask to a binary 0/1 mask
+       at the 30th percentile, refit from scratch (random init, only 30
+       Adam steps) at every single rebalance. Which ~30% of edges got
+       zeroed could change discontinuously between adjacent rebalances
+       even with no real change in market structure, and that structural
+       noise fed straight into a matrix inversion (C_clean^{-1}) in the
+       portfolio layer -- which amplifies exactly this kind of
+       instability. Fixed by using the continuous edge_mask directly as a
+       soft multiplicative reweighting of the Laplacian instead of a hard
+       cutoff, so small changes in mask values produce small changes in
+       the resulting graph rather than a discontinuous edge-set flip.
+    2. It rescaled node features by a continuous, per-rebalance feat_mask
+       before feeding them into the frozen base model for live trading
+       decisions -- but the model was never trained on rescaled feature
+       magnitudes, so this pushed every rebalance's inputs off the
+       distribution the model actually knows how to handle. Feature
+       masking is now diagnostic-only (still returned by explain_allocation
+       and available for the attribution plot); it is no longer applied
+       to the weights actually used for trading.
+    3. The model's own EMA smoothing (portfolio_layer's temporal filter)
+       only activates when a multi-step batch is passed in one forward
+       call; this function calls the model one rebalance at a time
+       (batch size 1), so that smoothing silently never fired, leaving
+       the Explained weight path fully unsmoothed on top of the above two
+       sources of noise. An equivalent EMA is now applied explicitly
+       across the loop's iterations.
     """
     model.eval()
     num_assets = returns_df.shape[1]
     returns_tensor = torch.tensor(returns_df.values, dtype=torch.float32)
     num_timesteps = len(returns_df)
-    
+
     explained_weights = []
+    prev_smoothed_weights = None
 
     with torch.no_grad():
         for t in range(len(empirical_data["corr_emp"])):
@@ -198,20 +234,33 @@ def generate_explained_allocations(
                 eigenvals=eigenvals,
                 eigenvecs=eigenvecs,
                 target_weights=raw_weights.detach(),
-                epochs=30,  # Fast inference pass
+                epochs=explainer_epochs,
                 lr=0.01
             )
 
-            # 2. Mask noisy Laplacian edges & weak node features
-            edge_threshold = np.percentile(edge_mask, 30)  # Keep top 70%
-            filtered_edge_mask = torch.tensor(edge_mask > edge_threshold, dtype=torch.float32)
-            
-            masked_lap = sample_lap * filtered_edge_mask.unsqueeze(0)
-            masked_feat = node_feat * torch.tensor(feat_mask, dtype=torch.float32).view(1, 1, -1)
+            # 2. Soft-mask the Laplacian using the continuous edge importance
+            # score directly (no hard threshold) -- preserves graded
+            # information and avoids discontinuous edge-set changes between
+            # rebalances. Node features are left unmasked for the live
+            # trading forward pass; feat_mask remains available to the
+            # caller for diagnostics/plotting only.
+            soft_edge_mask = torch.tensor(edge_mask, dtype=torch.float32)
+            masked_lap = sample_lap * soft_edge_mask.unsqueeze(0)
 
-            # 3. Predict weights on pruned graph
-            weights, _, _, _ = model(masked_feat, masked_lap, eigenvals, eigenvecs)
-            explained_weights.append(weights.squeeze(0).cpu().numpy())
+            # 3. Predict weights on the softly-pruned graph
+            weights, _, _, _ = model(node_feat, masked_lap, eigenvals, eigenvecs)
+            weights = weights.squeeze(0)
+
+            # 4. Explicit EMA smoothing across rebalances (mirrors
+            # models/portfolio_layer.py's Eq. ema, which never fires for
+            # this one-step-at-a-time call pattern).
+            if prev_smoothed_weights is None:
+                smoothed = weights
+            else:
+                smoothed = ema_alpha * weights + (1 - ema_alpha) * prev_smoothed_weights
+            prev_smoothed_weights = smoothed.clone()
+
+            explained_weights.append(smoothed.cpu().numpy())
 
     weights_array = np.array(explained_weights)
     eval_dates = empirical_data["dates"][:len(weights_array)]

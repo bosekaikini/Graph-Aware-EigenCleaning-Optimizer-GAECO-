@@ -1,36 +1,38 @@
+#Results at return_weight=2
+
 =====================================================
              GAECO-NET BENCHMARK RESULTS             
 =====================================================
 
 --- 1. GAECO-Net Ensemble Portfolio Stats ---
-Start                              2020-01-02 00:00:00
-End                                2024-12-31 00:00:00
-Period                              1258 days 00:00:00
-Start Value                                      100.0
-End Value                                   184.741189
-Total Return [%]                             84.741189
-Benchmark Return [%]                         80.049943
-Max Gross Exposure [%]                           100.0
-Total Fees Paid                              19.048694
-Max Drawdown [%]                                42.978
-Max Drawdown Duration                403 days 00:00:00
-Total Trades                                      5251
-Total Closed Trades                               5241
-Total Open Trades                                   10
-Open Trade PnL                               -2.887077
-Win Rate [%]                                  63.38485
-Best Trade [%]                               95.017674
-Worst Trade [%]                             -45.437783
-Avg Winning Trade [%]                        10.139357
-Avg Losing Trade [%]                         -6.306055
-Avg Winning Trade Duration    124 days 14:49:29.295605
-Avg Losing Trade Duration      90 days 05:20:25.013027
-Profit Factor                                 1.462139
-Expectancy                                     0.01672
-Sharpe Ratio                                  0.668046
-Calmar Ratio                                  0.453552
-Omega Ratio                                   1.112161
-Sortino Ratio                                 0.984117
+Start                             2020-01-03 00:00:00
+End                               2025-01-10 00:00:00
+Period                              132 days 00:00:00
+Start Value                                     100.0
+End Value                                  176.761619
+Total Return [%]                            76.761619
+Benchmark Return [%]                        81.492434
+Max Gross Exposure [%]                          100.0
+Total Fees Paid                              5.090373
+Max Drawdown [%]                             23.38013
+Max Drawdown Duration                26 days 00:00:00
+Total Trades                                     1815
+Total Closed Trades                              1785
+Total Open Trades                                  30
+Open Trade PnL                               4.997819
+Win Rate [%]                                71.988796
+Best Trade [%]                             115.799841
+Worst Trade [%]                            -38.366135
+Avg Winning Trade [%]                        18.96655
+Avg Losing Trade [%]                       -10.236566
+Avg Winning Trade Duration    70 days 23:54:23.813229
+Avg Losing Trade Duration            59 days 02:09:36
+Profit Factor                                 3.41171
+Expectancy                                   0.040204
+Sharpe Ratio                                 2.875002
+Calmar Ratio                                 16.38705
+Omega Ratio                                  1.492684
+Sortino Ratio                                4.213196
 Name: group, dtype: object
 
 =====================================================
@@ -133,36 +135,35 @@ Sortino Ratio                                 0.983748
 Name: group, dtype: object
 
 =====================================================
---- 5. GAECO-Net Explained (Pruned Graph) Stats ---
-Start                              2020-01-02 00:00:00
-End                                2024-10-07 00:00:00
-Period                              1199 days 00:00:00
-Start Value                                      100.0
-End Value                                   129.818858
-Total Return [%]                             29.818858
-Benchmark Return [%]                         74.341413
-Max Gross Exposure [%]                           100.0
-Total Fees Paid                              11.966317
-Max Drawdown [%]                             47.184593
-Max Drawdown Duration                839 days 00:00:00
-Total Trades                                     15352
-Total Closed Trades                              15323
-Total Open Trades                                   29
-Open Trade PnL                                0.870828
-Win Rate [%]                                 65.607257
-Best Trade [%]                               90.783474
-Worst Trade [%]                             -43.055381
-Avg Winning Trade [%]                        10.847036
-Avg Losing Trade [%]                         -7.174759
-Avg Winning Trade Duration    566 days 12:25:34.109221
-Avg Losing Trade Duration     542 days 06:50:41.214421
-Profit Factor                                 1.176047
-Expectancy                                    0.001889
-Sharpe Ratio                                  0.397803
-Calmar Ratio                                  0.175238
-Omega Ratio                                   1.062846
-Sortino Ratio                                 0.591577
-Name: group, dtype: object
 
-=====================================================
+========================================================
+=== STEP 5: EMPIRICAL STATISTICAL VIABILITY SUITE ===
+========================================================
 
+--- Pillar 1: Return Distribution & Time Series Foundations ---
+[Normality Test (Jarque-Bera)]
+  - JB Statistic: 29.6131
+  - p-value: 3.7119e-07
+  - Conclusion: Rejects normality (p < 0.05). Heavy-tails/skewness exist, justifying nonlinear GNN filters.
+
+[Stationarity Test (ADF)]
+  - ADF Statistic: -11.8892
+  - p-value: 5.9223e-22
+  - Conclusion: Stationary sequence (p < 0.05). Time series assumptions are valid for mathematical forecasting.
+
+[ARCH Effects / Volatility Clustering (Ljung-Box on Squared Returns)]
+  - Lag 5 p-value: 3.2193e-02
+  - Lag 10 p-value: 1.2140e-03
+  - Conclusion: Significant volatility clustering detected (p < 0.05). Structural ARCH features are confirmed.
+
+--- Pillar 2: Alpha Performance Significance vs. Benchmark ---
+[Mean Performance Lift (Paired t-test)]
+  - t-statistic: 0.8684
+  - p-value: 0.3868
+  - Conclusion: Mean difference is statistically indistinguishable from zero (noise).
+
+[Risk Reduction Significance (Levene's Variance Test)]
+  - Levene Statistic: 48.3206
+  - p-value: 0.0000
+  - Conclusion: Strategy variance differences are STATISTICALLY SIGNIFICANT. The variance reduction is structural.
+========================================================

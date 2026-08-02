@@ -92,7 +92,7 @@ def run_vectorbt_backtest(
         if model_checkpoint is None or data_dict is None:
             raise ValueError("Must provide weights_df OR model_checkpoint & data_dict.")
         
-        model = GAECONetPipeline(num_assets=num_assets, in_features=2, hidden_dim=64).to(device)
+        model = GAECONetPipeline(num_assets=num_assets, in_features=8, hidden_dim=64).to(device)
         model.load_state_dict(torch.load(model_checkpoint, map_location=device))
         model.eval()
 
@@ -150,18 +150,31 @@ def run_vectorbt_backtest(
     daily_price_df = (1.0 + aligned_returns).cumprod()
 
     # -------------------------------------------------------------------------
-    # FIX 2: Resample Prices to Rebalancing Schedule
-    # Running from_orders on daily prices causes passive position drift to 
-    # trigger orders daily. Resampling both prices & weights to the execution 
-    # schedule ensures orders only execute strictly on rebalance dates (e.g. 2W-FRI).
-    # -------------------------------------------------------------------------
-    exec_prices = daily_price_df.resample(rebalance_freq).last().dropna()
-    exec_weights = clean_weights_df.reindex(exec_prices.index, method='ffill')
-
-    print(f"Running VectorBT Strategy Backtest (Execution points: {len(exec_prices)} cycles)...")
+    # FIX (see "results make nervous" / suspiciously high Sharpe & p=0.0000):
+    # The previous version resampled BOTH price and weights down to the
+    # rebalance frequency (e.g. 2W-FRI, ~26 bars/year) before calling
+    # vbt.Portfolio.from_orders(..., freq='1D'). vectorbt annualizes
+    # Sharpe/Sortino/etc. by sqrt(periods implied by `freq` over the index
+    # span), so telling it freq='1D' while actually feeding it a ~26-bar/
+    # year series over-annualizes by roughly sqrt(252)/sqrt(26) =~ 3.1x --
+    # a reported Sharpe of ~2.9 is therefore likely a true Sharpe of ~0.9
+    # once correctly annualized. This ALSO explains the low n=127 in the
+    # significance suite (the return series genuinely only had ~127
+    # points) and the mismatch with run_covariance_benchmark_backtest
+    # below, which was never resampled this way and has always used the
+    # full daily grid -- i.e. GAECO and the baselines were being measured
+    # through different, non-comparable execution mechanics the entire
+    # time. `clean_weights_df` (from process_execution_weights above) is
+    # already a full-daily-index, deadband-filtered, forward-filled
+    # weights DataFrame -- exactly matching what the baseline function
+    # uses -- so it and the full daily_price_df are used directly here,
+    # with no extra resampling step, exactly mirroring
+    # run_covariance_benchmark_backtest's mechanics below.
+    print(f"Running VectorBT Strategy Backtest (Execution points: {len(daily_price_df)} daily bars, "
+          f"rebalanced on a {rebalance_freq} schedule)...")
     portfolio = vbt.Portfolio.from_orders(
-        close=exec_prices,
-        size=exec_weights,
+        close=daily_price_df,
+        size=clean_weights_df,
         size_type='targetpercent',
         fees=fee_rate,
         freq='1D',

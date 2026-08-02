@@ -212,7 +212,36 @@ def main():
     print(f"Successfully saved all benchmark statistics to {output_filename}!")
 
     print(portfolio.stats())
-    run_academic_statistical_viability(portfolio, eval_returns_df)
+    ensemble_stat_results = run_academic_statistical_viability(
+        portfolio,
+        eval_returns_df,
+        benchmark_portfolios={
+            "Ledoit-Wolf": lw_portfolio,
+            "Marchenko-Pastur": mp_portfolio,
+            "Sample-Covariance": sv_portfolio,
+        },
+        strategy_label="GAECO-Net (Ensemble)",
+    )
+
+    # FIX: previously only the full ensemble's returns were ever run through
+    # the significance suite -- the Explained/pruned-subgraph portfolio's
+    # 2.99 Sharpe / 114% return numbers were never checked against the same
+    # benchmarks, so there was no way to tell whether that gap is real or
+    # just a smaller, noisier sample (portfolio_explained's window is ~126
+    # "days"/bi-weekly cycles vs. the ensemble's ~132 -- see the paper's
+    # Period-field caveat -- and it trades far less often, both of which
+    # inflate variance around any point estimate). Run it through the exact
+    # same tests now.
+    explained_stat_results = run_academic_statistical_viability(
+        portfolio_explained,
+        eval_returns_df,
+        benchmark_portfolios={
+            "Ledoit-Wolf": lw_portfolio,
+            "Marchenko-Pastur": mp_portfolio,
+            "Sample-Covariance": sv_portfolio,
+        },
+        strategy_label="GAECO-Net (Explained)",
+    )
 
     # =========================================================================
     # Step 5: Post-Hoc Model Explainability Analysis

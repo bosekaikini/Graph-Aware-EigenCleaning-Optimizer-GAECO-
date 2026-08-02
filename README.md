@@ -1,134 +1,59 @@
-# GAECO-NET
+# Graph-Aware EigenCleaning Optimizer (GAECO-Net)
 
-**GAECO-Net (Graph-Aware EigenCleaning Optimizer)** is an end-to-end, graph-informed deep learning framework for robust portfolio optimization. It combines Graph Neural Networks (GNNs), Random Matrix Theory (RMT) spectral regularization, and realistic trade execution constraints to produce low-turnover, risk-managed portfolios.
+A PyTorch and VectorBT quantitative framework implementing the **Graph-Aware EigenCleaning Optimizer (GAECO-Net)** for portfolio allocation and risk management, based on *Karzanov et al. (2025)* ([arXiv:2408.01387](https://arxiv.org/abs/2408.01387)).
 
----
-
-## 🎯 Key Innovation & Methodology
-
-Classical mean-variance optimization and neural portfolio allocation models often underperform in live trading environments due to two primary challenges:
-
-1. **Sample Covariance Noise:** In high-dimensional regimes where the asset count $N$ is large relative to historical lookback $T$, empirical correlation matrices exhibit extreme spectral distortion and noise, leading to unstable allocations.
-2. **Transaction Cost Drag:** Unconstrained neural models frequently propose daily micro-allocations. Processing continuous floating-point adjustments generates excessive turnover, causing transaction fees to drain strategy returns over time.
-
-### Quantitative Pillars
-
-* **Graph Structure Learning:** Uses dynamic correlation thresholding to construct normalized Graph Laplacians ($\mathbf{L} = \mathbf{I} - \mathbf{D}^{-1/2}\mathbf{A}\mathbf{D}^{-1/2}$), allowing GNN message passing to learn structural dependencies and asset relationships.
-* **Spectral Regularization (EigenCleaning):** Isolates informative signal from high-frequency noise in empirical correlation matrices using Random Matrix Theory (RMT) principles.
-* **Out-of-Sample Discipline:** Maintains strict temporal separation between training windows and evaluation windows to eliminate lookahead bias and data leakage.
-* **Execution Constraints:** Integrates periodic rebalancing schedules, turnover penalties during training, and target allocation deadbands to minimize trading churn and manage friction costs.
+GAECO-Net combines **Spectral Graph Neural Networks (ChebNet)** with **Random Matrix Theory (RMT)** denoising to construct robust, noise-resilient asset covariance matrices and portfolio allocations.
 
 ---
 
-## 📂 Repository & File Structure
+## Technical Architecture & Methodology
 
 ```text
-Graph-Aware-EigenCleaning-Optimizer-GAECO-/
-│
++-----------------------------------------------------------------------------------+
+|                                 INPUT PIPELINE                                    |
+| Asset Daily Returns  -->  Empirical Correlation Graph  -->  Graph Laplacian (L)   |
++-----------------------------------------------------------------------------------+
+                                          |
+                                          v
++-----------------------------------------------------------------------------------+
+|                           SPECTRAL GNN CORE (ChebNet)                             |
+|  - Chebyshev Polynomial Convolutions over Graph Laplacian L                       |
+|  - Node Features: Rolling Volatility, Momentum, Return Skewness                   |
+|  - Spectral Eigen-filtering: Denoising Empirical Eigenvalues via RMT               |
++-----------------------------------------------------------------------------------+
+                                          |
+                                          v
++-----------------------------------------------------------------------------------+
+|                        POST-HOC EXPLAINABILITY LAYER                              |
+|  - Continuous Soft Masking on Laplacian Edges & Node Features                     |
+|  - Preserves Graph Connectivity (Prevents Laplacian Singularities)                |
+|  - Active Asset Universe Pruning (Noise Asset Removal)                           |
++-----------------------------------------------------------------------------------+
+                                          |
+                                          v
++-----------------------------------------------------------------------------------+
+|                             BACKTESTING & EVALUATION                              |
+|  - VectorBT Execution (Rebalancing, Transaction Fee Modeling)                    |
+|  - Hypotheses Testing: Jobson-Korkie (1981) + Memmel (2002) Correction            |
+|  - Benchmark Comparison: Ledoit-Wolf, Marchenko-Pastur, Sample Covariance        |
++-----------------------------------------------------------------------------------+
+
+
+
+Core ConceptsGraph Laplacian Signal Processing:The asset universe is modeled as a connected graph $G = (V, E)$, where edge weights correspond to empirical correlations. The normalized Graph Laplacian is defined as $\mathbf{L} = \mathbf{I} - \mathbf{D}^{-1/2}\mathbf{A}\mathbf{D}^{-1/2}$. ChebNet layers apply $K$-th order Chebyshev polynomials to approximate spectral graph convolutions without explicit eigendecomposition on every pass.Random Matrix Theory (RMT) Eigencleaning:Empirical correlation matrices suffer from sample noise in high dimensions ($N \approx T$). GAECO-Net cleans noisy eigenvalues outside the Marchenko-Pastur bounds ($\lambda \in [\lambda_{-}, \lambda_{+}]$), preserving informative market factors while shrinking noise modes.Asymmetric Downside (Sortino) Optimization:The model is optimized using an asymmetric downside return loss combined with an $L_1$ turnover penalty:$$\mathcal{L} = -\left( \beta \cdot \bar{R}_p + \frac{\bar{R}_p}{\sigma_{\text{down}}} \right) + \lambda_{\text{turnover}} \cdot \Vert{}\mathbf{w}_t - \mathbf{w}_{t-1}\Vert{}_1$$This penalizes downside volatility without restricting upside variance, mitigating transaction cost drag.Continuous Soft Masking (GAECO-Explained):Instead of hard binary edge truncations (which disconnect the Graph Laplacian and induce numerical instability), GAECO-Explained applies smooth sigmoidal soft masks:$$\mathbf{L}_{\text{masked}} = \mathbf{L} \odot (1 - \alpha + \alpha \cdot \mathbf{M}_{\text{edge}})$$This preserves spectral topology while suppressing noisy cross-asset correlations.Project StructurePlaintextGraph-Aware-EigenCleaning-Optimizer-GAECO-/
 ├── data/
-│   ├── loader.py              # WRDS/CRSP Data loader & rolling matrix calculator
-│   └── graph_builder.py       # Graph construction & normalized Laplacian builder
-│
-├── models/
-│   └── gaeco_network.py       # Core GNN & Spectral Cleaning neural architecture
-│
+│   └── price_loader.py         # Downloads/formats asset price series and computes log returns.
 ├── pipeline/
-│   └── train.py               # Multi-agent ensemble training pipeline
-│
-├── benchmarks/
-│   └── estimators.py          # Baseline estimators (1/N, Min-Var, Shrinkage)
-│
-├── backtester/
-│   └── engine.py              # VectorBT backtesting engine & execution constraints
-│
-├── main.py                    # Master execution workflow script
-├── README.md                  # Project documentation
-└── requirements.txt           # Environment dependencies
-🧩 Module Roles & Component Responsibilities
-1. data/loader.py — Data Acquisition & Rolling Matrices
-CRSP Data Ingestion: Pulls historical daily asset returns over designated date ranges via the WRDS API.
-
-Rolling Estimations: Pre-computes rolling empirical correlation matrices over a configurable historical lookback window (default: 60 days).
-
-Spectral Decomposition: Extracts daily rolling eigenvalues and eigenvectors required for spectral regularization.
-
-2. data/graph_builder.py — Graph Construction
-Adjacency Estimation: Applies correlation thresholds to build dynamic asset connectivity graphs.
-
-Laplacian Normalization: Computes normalized Graph Laplacians to enable graph convolutions across network nodes.
-
-3. models/gaeco_network.py — Neural Architecture
-Node Feature Processing: Formulates asset-level input features combining historical returns and topological graph metrics.
-
-Graph Convolutional Network (GCN): Passes messages across the asset connectivity graph to capture non-linear relational features.
-
-Spectral Cleaning Head: Combines GNN embeddings with filtered spectral decompositions to output normalized, long-only portfolio weights (∑w 
-i
-​
- =1,w 
-i
-​
- ≥0).
-
-4. pipeline/train.py — Multi-Agent Ensemble & Loss Function
-Ensemble Learning: Trains multiple independent neural agents with distinct random initialization seeds to average out individual model variance.
-
-Turnover Penalty Optimization: Trains the network using a joint loss function that balances risk-adjusted return against allocation stability:
-
-L 
-total
-​
- =L 
-risk
-​
- +λ 
-turnover
-​
- ⋅∥w 
-t
-​
- −w 
-t−1
-​
- ∥ 
-1
-​
- 
-5. benchmarks/estimators.py — Comparative Baselines
-Provides standard non-neural benchmark strategies for baseline comparison:
-
-Equal Weight (1/N): Static uniform allocation across the asset universe.
-
-Global Minimum Variance (GMV): Allocation minimizing empirical portfolio variance.
-
-Shrinkage Estimators: Covariance estimation adjusted via Ledoit-Wolf shrinkage.
-
-6. backtester/engine.py — Backtesting & Execution Engine
-Execution Constraints:
-
-Periodic Resampling: Resamples raw neural weight outputs to execute strictly on fixed schedules (e.g., bi-weekly Fridays: 2W-FRI).
-
-Deadband Filter: Holds current asset weights static if target allocation drift falls below a specified deadband threshold (e.g., 2%), ignoring non-essential micro-trades.
-
-Vectorized Backtesting: Runs vectorized backtests via VectorBT using price series, accounting for explicit transaction fees (default: 10 bps).
-
-Comparative Summary: Prints side-by-side performance metrics (Total Return, Sharpe Ratio, Sortino Ratio, Max Drawdown, Total Trades, Fees Paid) comparing GAECO-Net to benchmark strategies under identical friction rules.
-
-7. main.py — Master Workflow Script
-Orchestrates data pipeline execution, train/test splitting, ensemble training on historical data, out-of-sample backtesting, and performance visualization.
-
-⚙️ Key Engineering & Execution Logic
-Temporal Separation & Zero-Leakage Policy
-To prevent lookahead bias, training returns and empirical matrices are strictly isolated to the training date window. Model inference and weight generation run out-of-sample on unseen test periods.
-
-Transaction Cost Reduction Pipeline
-Strategy turnover and fee impact are managed across three distinct layers:
-
-Model Layer: Turnover penalty added to the loss function during training.
-
-Scheduling Layer: Execution weights strictly resampled to periodic schedules (e.g., 2W-FRI).
-
-Execution Layer: Allocation deadband threshold suppresses minor drift adjustments.
-
-Index Alignment Standards
-All dataset indices, matrix structures, and backtest inputs are normalized to unified date-time structures (pd.DatetimeIndex) to ensure alignment across pandas operations and VectorBT backtests.
+│   ├── model.py                # ChebNet spectral GNN & Markowitz allocation layers.
+│   ├── train.py                # Training loop, loss functions (Sortino), feature extractors.
+│   └── rmt.py                  # Marchenko-Pastur eigenvalue cleaning & spectral filters.
+├── explainability/
+│   └── explainer.py            # GAECOExplainer module, soft masking engine, networkx visualizer.
+├── backtest/
+│   ├── engine.py               # VectorBT execution wrapper & transaction cost engine.
+│   └── covariance.py           # Benchmark estimators (Ledoit-Wolf, Sample Covariance).
+├── main.py                     # Primary pipeline entry point: data load, train, eval, export.
+├── benchmark_results.txt       # Out-of-sample backtest report & statistical significance tests.
+├── requirements.txt            # Environment dependencies.
+└── README.md                   # System documentation.
+Detailed File Specifications1. pipeline/model.pyGAECO_Net(nn.Module): Main network combining Chebyshev graph convolutions, RMT eigenvalue cleaning, and softmax/quadratic constrained weight generation.Input Tensors: Node Features (B, N, F), Graph Laplacian (B, N, N), Eigenvalues (B, N), Eigenvectors (B, N, N).2. explainability/explainer.pyGAECOExplainer(nn.Module): Post-hoc optimization layer learning continuous edge masks $\mathbf{M}_{\text{edge}} \in [0, 1]^{N \times N}$ and node feature masks $\mathbf{M}_{\text{feat}} \in [0, 1]^F$.explain_allocation(): Optimizes fidelity, sparsity, and entropy loss terms. Critical Implementation Detail: Uses with torch.enable_grad(): internally to ensure autograd functions during backtest/evaluation sweeps.generate_explained_allocations(): Generates out-of-sample allocations on soft-masked graphs ($\alpha = 0.5$).3. backtest/engine.py & main.pyStatistical Verification: Computes two-tailed paired $t$-tests and Jobson-Korkie (1981) tests with Memmel (2002) correction to evaluate Sharpe ratio differences:$$Z = \frac{\hat{SR}_A - \hat{SR}_B}{\sqrt{\frac{1}{T} \left[ 2 - 2\rho + \frac{1}{2}(\hat{SR}_A^2 + \hat{SR}_B^2 - 2\hat{SR}_A\hat{SR}_B\rho^2) \right]}}$$Type annotations explicitly cast return values to native Python float primitives (float(z_stat), float(p_value)) to avoid NumPy array type mismatch issues in Pylance/MyPy static analysis.Key Technical Decisions & Gotchas for AI AgentsIf you are an automated agent or developer extending this codebase, keep the following constraints in mind:PyTorch Gradient Scope in Explainer:Always maintain with torch.enable_grad(): inside explainability/explainer.py -> explain_allocation(). Calling the explainer inside an evaluation loop (which is wrapped in with torch.no_grad():) will cause PyTorch to raise RuntimeError: element 0 of tensors does not require grad if explicit gradient scope override is omitted.Detached Target Tensors:When calculating post-hoc explainer loss, ensure target portfolio weights are explicitly detached from the base computational graph (target_weights.detach()).Graph Laplacian Stability:Do not apply hard binary thresholding (e.g., edge_mask > percentile) to the Laplacian matrix during inference. Hard thresholding breaks graph connectivity, leading to singular degree matrices $\mathbf{D}$ and failing spectral convolutions. Always use the continuous soft masking implementation defined in generate_explained_allocations().Type Checking Annotations:SciPy distribution functions (stats.norm.cdf) return 0-dimensional NumPy NDArray[float64] objects. Always explicitly convert scalar statistics using float(...) prior to returning from functions annotated with tuple[float, float].

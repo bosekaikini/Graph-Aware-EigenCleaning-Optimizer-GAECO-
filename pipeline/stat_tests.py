@@ -50,13 +50,96 @@ def jobson_korkie_sharpe_test(strat_rets: pd.Series, bench_rets: pd.Series) -> t
     return float(z_stat), float(p_value)
 
 
-def run_academic_statistical_viability(portfolio, test_returns_df):
+def _run_pillar2_vs_one_benchmark(strat_vector: pd.Series, bench_vector: pd.Series, bench_name: str, strat_label: str) -> dict:
     """
-    Computes rigorous statistical tests on empirical backtest outputs 
-    to validate model assumptions and prove outperformance significance.
+    Runs the three Pillar-2 significance tests (Jobson-Korkie Sharpe test,
+    paired t-test, Levene's variance test) for the strategy against a
+    single named benchmark return series, printing a labeled report and
+    returning the raw statistics/p-values for programmatic use.
+    """
+    combined = pd.concat([strat_vector, bench_vector], axis=1).dropna()
+    combined.columns = [strat_label, bench_name]
+    s = combined[strat_label]
+    b = combined[bench_name]
+
+    print(f"\n>>> {strat_label} vs. {bench_name} (n={len(combined)} aligned obs.) <<<")
+
+    jk_z, jk_p_val = jobson_korkie_sharpe_test(s, b)
+    print(f"[Sharpe Ratio Outperformance Test (Jobson-Korkie, Memmel-corrected)]")
+    print(f"  - Z-statistic: {jk_z:.4f}")
+    print(f"  - p-value: {jk_p_val:.4e}")
+    if jk_p_val < 0.05 and jk_z > 0:
+        print(f"  - Conclusion: Sharpe outperformance vs {bench_name} is STATISTICALLY SIGNIFICANT (p < 0.05).")
+    elif jk_p_val < 0.05 and jk_z < 0:
+        print(f"  - Conclusion: {bench_name}'s Sharpe ratio significantly beats {strat_label}.")
+    else:
+        print(f"  - Conclusion: Sharpe difference vs {bench_name} is statistically indistinguishable from noise.")
+
+    t_stat, t_p_val = stats.ttest_rel(s, b)
+    print(f"[Mean Performance Lift (Paired t-test)]")
+    print(f"  - t-statistic: {t_stat:.4f}")
+    print(f"  - p-value: {t_p_val:.4f}")
+    if t_p_val < 0.05:
+        print(f"  - Conclusion: Mean outperformance vs {bench_name} is STATISTICALLY SIGNIFICANT at alpha=5% (t-stat positive: {t_stat > 0}).")
+    else:
+        print(f"  - Conclusion: Mean difference vs {bench_name} is statistically indistinguishable from zero (noise).")
+
+    levene_stat, levene_p_val = stats.levene(s, b)
+    print(f"[Risk Reduction Significance (Levene's Variance Test)]")
+    print(f"  - Levene Statistic: {levene_stat:.4f}")
+    print(f"  - p-value: {levene_p_val:.4e}")
+    if levene_p_val < 0.05:
+        print(f"  - Conclusion: Variance difference vs {bench_name} is STATISTICALLY SIGNIFICANT (structural risk reduction).")
+    else:
+        print(f"  - Conclusion: Variance difference vs {bench_name} is not statistically distinguishable from noise.")
+
+    return {
+        "n_obs": len(combined),
+        "jobson_korkie_z": jk_z, "jobson_korkie_p": jk_p_val,
+        "paired_t_stat": t_stat, "paired_t_p": t_p_val,
+        "levene_stat": levene_stat, "levene_p": levene_p_val,
+    }
+
+
+def run_academic_statistical_viability(
+    portfolio,
+    test_returns_df,
+    benchmark_portfolios: dict | None = None,
+    strategy_label: str = "GAECO_Net",
+):
+    """
+    Computes rigorous statistical tests on empirical backtest outputs
+    to validate model assumptions and quantify outperformance significance.
+
+    FIX (previously): Pillar 2 only ever compared the strategy against a
+    raw Equal-Weighted (1/N) portfolio built directly from
+    `test_returns_df`. That is a materially different, and in a strong
+    bull-market window like 2020-2024 often *harder*, benchmark than the
+    Ledoit-Wolf / Marchenko-Pastur / Sample-Covariance baselines the
+    headline results table (and this paper's actual claim) is measured
+    against -- so a strategy could show no significant edge vs 1/N while
+    still clearly, and significantly, beating the covariance-estimation
+    baselines it is meant to be compared to. "Improving the statistics"
+    without also fixing the underlying model means picking the right
+    comparison, not just a better one: this version tests against
+    Equal-Weight AND every baseline portfolio you actually have.
+
+    strategy_label: identifies which GAECO-Net variant is being tested in
+    the printed report and the returned dict (e.g. "GAECO-Net (Ensemble)"
+    vs "GAECO-Net (Explained)"), so you can call this function once per
+    variant and tell the two reports apart -- rather than only ever
+    testing the full ensemble and eyeballing the explained variant's
+    Sharpe from the raw vectorbt stats.
+
+    benchmark_portfolios: optional dict of {name: vbt.Portfolio}, e.g.
+        {"Ledoit-Wolf": lw_portfolio, "Marchenko-Pastur": mp_portfolio,
+         "Sample-Covariance": sv_portfolio}
+    from main.py. If omitted, only the Equal-Weighted (1/N) comparison is
+    run (old behavior). Returns a dict of results per benchmark for
+    programmatic inspection instead of only printing.
     """
     print("\n========================================================")
-    print("=== STEP 5: EMPIRICAL STATISTICAL VIABILITY SUITE ===")
+    print(f"=== STEP 5: EMPIRICAL STATISTICAL VIABILITY SUITE -- {strategy_label} ===")
     print("========================================================")
     
     # Extract Strategy Returns from VectorBT Portfolio object
@@ -67,9 +150,9 @@ def run_academic_statistical_viability(portfolio, test_returns_df):
     
     # Intersect and align dates to drop any NaN fields across streams cleanly
     combined = pd.concat([strategy_returns, benchmark_returns], axis=1).dropna()
-    combined.columns = ['GAECO_Net', 'Equal_Weighted']
+    combined.columns = [strategy_label, 'Equal_Weighted']
     
-    strat_vector = combined['GAECO_Net']
+    strat_vector = combined[strategy_label]
     bench_vector = combined['Equal_Weighted']
 
     # --- PILLAR 1: MODEL ASSUMPTION & STYLIZED FACTS TESTING ---
@@ -107,38 +190,23 @@ def run_academic_statistical_viability(portfolio, test_returns_df):
         print("  - Conclusion: No significant volatility clustering detected.")
 
     # --- PILLAR 2: EMPIRICAL PERFORMANCE SIGNIFICANCE TESTING ---
-    print("\n--- Pillar 2: Alpha Performance Significance vs. Benchmark ---")
+    print("\n--- Pillar 2: Performance Significance vs. Every Available Benchmark ---")
 
-    # 1. Jobson-Korkie (Memmel Corrected) Test for Sharpe Ratio Outperformance
-    jk_z, jk_p_val = jobson_korkie_sharpe_test(strat_vector, bench_vector)
-    print(f"[Sharpe Ratio Outperformance Test (Jobson-Korkie with Memmel Correction)]")
-    print(f"  - Z-statistic: {jk_z:.4f}")
-    print(f"  - p-value: {jk_p_val:.4e}")
-    if jk_p_val < 0.05 and jk_z > 0:
-        print("  - Conclusion: Risk-adjusted outperformance (Sharpe Ratio) is STATISTICALLY SIGNIFICANT (p < 0.05).")
-    elif jk_p_val < 0.05 and jk_z < 0:
-        print("  - Conclusion: Benchmark Sharpe ratio significantly outperforms Strategy.")
-    else:
-        print("  - Conclusion: Sharpe ratio difference is statistically indistinguishable from benchmark noise.")
-    
-    # 2. Paired t-test for Daily Mean Performance Lift
-    t_stat, t_p_val = stats.ttest_rel(strat_vector, bench_vector)
-    print(f"\n[Mean Performance Lift (Paired t-test)]")
-    print(f"  - t-statistic: {t_stat:.4f}")
-    print(f"  - p-value: {t_p_val:.4f}")
-    if t_p_val < 0.05:
-        print(f"  - Conclusion: Mean outperformance is STATISTICALLY SIGNIFICANT at alpha = 5% (t-stat positive: {t_stat > 0}).")
-    else:
-        print("  - Conclusion: Mean difference is statistically indistinguishable from zero (noise).")
+    results = {
+        "Equal_Weighted": _run_pillar2_vs_one_benchmark(strat_vector, bench_vector, "Equal-Weighted (1/N)", strategy_label)
+    }
 
-    # 3. Levene's Test for Risk Reduction Equality
-    levene_stat, levene_p_val = stats.levene(strat_vector, bench_vector)
-    print(f"\n[Risk Reduction Significance (Levene's Variance Test)]")
-    print(f"  - Levene Statistic: {levene_stat:.4f}")
-    print(f"  - p-value: {levene_p_val:.4f}")
-    if levene_p_val < 0.05:
-        print("  - Conclusion: Strategy variance differences are STATISTICALLY SIGNIFICANT. The variance reduction is structural.")
+    if benchmark_portfolios:
+        for name, bench_portfolio in benchmark_portfolios.items():
+            bench_ret = bench_portfolio.returns()
+            results[name] = _run_pillar2_vs_one_benchmark(strat_vector, bench_ret, name, strategy_label)
     else:
-        print("  - Conclusion: Variance differences are random; failed to confirm statistical risk mitigation dominance.")
-        
+        print(
+            "\n(No additional benchmark_portfolios were passed in -- only tested "
+            "against raw Equal-Weight. Pass your LW/MP/SV vbt.Portfolio objects "
+            "in to also test against the baselines your headline table actually "
+            "reports against; see main.py wiring below.)"
+        )
+
     print("========================================================\n")
+    return results
