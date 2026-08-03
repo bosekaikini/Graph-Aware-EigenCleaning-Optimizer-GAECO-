@@ -125,7 +125,7 @@ def main():
 
     print("\n=== Step 4: Running Out-of-Sample Backtest ===")
     
-    # STRICT ALIGNMENT: Align evaluation returns to the EXACT dates predicted by GAECO-Net
+    # Align evaluation returns to the EXACT dates predicted by GAECO-Net
     eval_returns_df = returns_df.loc[test_weights_df.index]
 
     print(f"Running Backtest from {eval_returns_df.index.min().date()} to {eval_returns_df.index.max().date()} ({len(eval_returns_df)} trading days)")
@@ -223,7 +223,7 @@ def main():
         strategy_label="GAECO-Net (Ensemble)",
     )
 
-    # FIX: previously only the full ensemble's returns were ever run through
+    # Before we had only the full ensemble's returns were ever run through
     # the significance suite -- the Explained/pruned-subgraph portfolio's
     # 2.99 Sharpe / 114% return numbers were never checked against the same
     # benchmarks, so there was no way to tell whether that gap is real or

@@ -161,7 +161,7 @@ def train_gaeco_net(
                                   # pass risk_aversion explicitly at both call sites
                                   # instead of relying on the default.
     lambda_turnover: float = 0.01,
-    return_weight: float = 5.0,  # FIX (targets return/Sharpe directly): was hardcoded
+    return_weight: float = 5.0,  # Before targets was hardcoded
                                   # at 2.0 below. With the loss now numerically stable
                                   # (EMA downside variance) and features now
                                   # cross-sectionally z-scored, the return head has
@@ -173,7 +173,7 @@ def train_gaeco_net(
                                   # baselines' cumulative return). Unlike top_k/
                                   # risk_aversion/turnover_weight, this hasn't been
                                   # tried and tuned down before.
-    top_k: int | None = None,    # FIX: threads through to DifferentiableMeanVariance;
+    top_k: int | None = None,    # Threads through to DifferentiableMeanVariance;
                                   # None preserves old dense-softmax behavior, pass e.g.
                                   # top_k=15 (for a 30-asset universe) to enable
                                   # conviction-based concentration.
@@ -201,11 +201,7 @@ def train_gaeco_net(
     # -------------------------------------------------------------------------
     # Phase 1: Synthetic Circular Block Bootstrap (CBB) Pre-Training
     # -------------------------------------------------------------------------
-    # FIX (see GAECO-Net paper, Limitations #2 "Unwired synthetic
-    # pre-training phase"): `generate_cbb_synthetic_data` previously existed
-    # as a standalone utility but was never called from this function, so
-    # only Phase 2 (real-data fine-tuning) ever ran despite `synthetic_epochs`
-    # being accepted as an argument. This block wires it in: a fresh CBB
+    # This block wires it the a fresh CBB
     # resample is drawn each epoch (so the agent sees a different synthetic
     # path every pass rather than overfitting to one static resample), and
     # is trained on with the identical model/criterion/optimizer used for
@@ -267,7 +263,7 @@ def train_gaeco_net(
     # -------------------------------------------------------------------------
     if epochs > 0:
         print(f"--- Phase 2: Real-Data Fine-Tuning ({epochs} epochs) ---")
-        # FIX: don't carry a downside-variance EMA calibrated to the
+        # We can't carry a downside-variance EMA calibrated to the
         # synthetic CBB panel's volatility scale into real-data fine-tuning
         # -- reset it so Phase 2 builds its own running estimate from real
         # returns instead.

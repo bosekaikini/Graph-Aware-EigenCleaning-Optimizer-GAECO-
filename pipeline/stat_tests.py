@@ -111,18 +111,7 @@ def run_academic_statistical_viability(
     Computes rigorous statistical tests on empirical backtest outputs
     to validate model assumptions and quantify outperformance significance.
 
-    FIX (previously): Pillar 2 only ever compared the strategy against a
-    raw Equal-Weighted (1/N) portfolio built directly from
-    `test_returns_df`. That is a materially different, and in a strong
-    bull-market window like 2020-2024 often *harder*, benchmark than the
-    Ledoit-Wolf / Marchenko-Pastur / Sample-Covariance baselines the
-    headline results table (and this paper's actual claim) is measured
-    against -- so a strategy could show no significant edge vs 1/N while
-    still clearly, and significantly, beating the covariance-estimation
-    baselines it is meant to be compared to. "Improving the statistics"
-    without also fixing the underlying model means picking the right
-    comparison, not just a better one: this version tests against
-    Equal-Weight AND every baseline portfolio you actually have.
+    
 
     strategy_label: identifies which GAECO-Net variant is being tested in
     the printed report and the returned dict (e.g. "GAECO-Net (Ensemble)"

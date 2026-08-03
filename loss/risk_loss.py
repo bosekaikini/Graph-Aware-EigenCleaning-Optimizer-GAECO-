@@ -35,19 +35,8 @@ class NetSortinoLoss(nn.Module):
         self.risk_lambda = risk_lambda
         self.turnover_weight = turnover_weight if turnover_weight is not None else fee_rate
 
-        # FIX (root cause of "GAECO and GAECO-Explained both bad / statistically
-        # indistinguishable from noise"): pipeline/train.py calls this loss once
-        # per single time step (batch size 1). With a single sample,
-        # downside_std was computed fresh each step from ONE realized return:
-        # whenever that one sample happened to be positive, negative_returns
-        # clamps to 0, so downside_std collapsed to sqrt(eps) (~0.001), and
-        # sortino_ratio = mean_ret / downside_std spiked to huge values on
-        # that step -- dominating return_weight*mean_ret and the turnover
-        # penalty and producing wildly unstable, effectively noisy gradient
-        # updates. This wasn't a new bug from a prior fix; it's inherent to
-        # computing a "Sortino ratio" from n=1 observation.
         #
-        # Fix: maintain an exponential moving average of the downside
+        # We maintain an exponential moving average of the downside
         # variance across training steps (detached from the autograd graph,
         # like a BatchNorm running statistic) and use THAT as the Sortino
         # denominator. mean_ret in the numerator is still fully

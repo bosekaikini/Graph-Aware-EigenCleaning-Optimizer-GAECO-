@@ -5,16 +5,7 @@ import torch.nn as nn
 
 class DifferentiableMeanVariance(nn.Module):
     """
-    FIX (see GAECO-Net paper, Limitations #5 / "Inactive top-k sparsity
-    lever"): the previous version only exposed a single `k_assets`
-    argument that was simultaneously (a) the universe size used by
-    calling code and (b) the number of names kept by top-k selection.
-    Every call site therefore passed `k_assets=num_assets`, which made
-    `top_k_softmax` mathematically a no-op dense softmax over the full
-    universe -- there was no way to ask for a genuinely sparse,
-    conviction-ranked portfolio.
-
-    This version separates the two concepts:
+    Here we separate the two concepts:
       - `num_assets`: the size of the investable universe (N).
       - `top_k`: how many of those N names to actually hold; defaults
         to `num_assets` (i.e. the old, non-sparse behavior) so existing
